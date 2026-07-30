@@ -48,7 +48,7 @@ def _create_cover_page(title: str) -> str:
     
     # Data de geração
     c.setFont(f_sub, 12)
-    data_str = f"Dossiê gerado automaticamente em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+    data_str = f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
     c.drawCentredString(A4_WIDTH / 2, y_center - 20, data_str)
     
     c.showPage()
@@ -113,6 +113,9 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                     
                     # Desenha a página do PDF original na nossa folha A4 limpa
                     new_page.show_pdf_page(target_rect, src_doc, page_num)
+                    
+                    # Título no cabeçalho
+                    new_page.insert_text(fitz.Point(MARGIN, 30), title.upper(), fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
                 src_doc.close()
                 
             elif ext in ['.png', '.jpg', '.jpeg']:
@@ -125,6 +128,9 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                 
                 # Inserimos os bytes da imagem
                 new_page.insert_image(target_rect, filename=str(file_path))
+                
+                # Título no cabeçalho
+                new_page.insert_text(fitz.Point(MARGIN, 30), title.upper(), fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
                 img_doc.close()
                 
             else:

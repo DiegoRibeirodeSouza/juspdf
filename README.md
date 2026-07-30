@@ -9,6 +9,7 @@
 O JusPDF consolida ferramentas poderosas (QPDF, Ghostscript, Poppler, OCRmyPDF, ReportLab) em uma interface central unificada.
 
 ### 🔄 Operações em Lote
+*   **Gerador de Dossiês (Com Pré-Referenciação Hash):** Junte múltiplos PDFs e Imagens bagunçados em um Dossiê impecável. O sistema cria uma capa elegante, centraliza qualquer anexo em folhas A4 padronizadas, e injeta uma **Hash Criptográfica Curta** (ex: `A7F92B...`) em todas as páginas, permitindo que você cite os anexos na sua petição com precisão cirúrgica antes mesmo do protocolo no PJe.
 *   **Juntar PDFs (Merge):** Selecione múltiplos PDFs de uma pasta e funda todos eles em um único arquivo, escolhendo a ordem desejada.
 *   **Imagens para PDF:** Converta múltiplos arquivos `.jpg` e `.png` diretamente para um arquivo PDF unificado.
 
@@ -140,6 +141,7 @@ juspdf/
 │   │   └── executor.py         # Tratamento de subprocessos
 │   └── backends/               # Wrappers das ferramentas de sistema
 │       ├── diff.py             # (Comparador diff-pdf-wx)
+│       ├── dossier.py          # (Gerador de Dossiês A4 com Pré-Referenciação Hash)
 │       ├── ghostscript.py      # (Compressão)
 │       ├── img2pdf.py          # (Conversão JPG -> PDF)
 │       ├── metadata.py         # (Limpeza de propriedades com pypdf)

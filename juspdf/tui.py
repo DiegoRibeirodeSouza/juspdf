@@ -77,6 +77,7 @@ def run_tui():
                 if pdfs:
                     pdf_choices.append("🛠️  [LOTE] Juntar PDFs desta pasta")
                     pdf_choices.append("🔍  [LOTE] Buscar texto em PDFs desta pasta")
+                    pdf_choices.append("🖋️  [LOTE] Assinar PDFs desta pasta com Token A3")
                     
                 imgs = list(target_dir.glob("*.jpg")) + list(target_dir.glob("*.png"))
                 if imgs:
@@ -145,6 +146,26 @@ def run_tui():
                     query = questionary.text("Digite o texto ou termo a ser buscado:").ask()
                     if query:
                         search_in_pdfs(target_dir, query)
+                    continue
+
+                if selected_item == "🖋️  [LOTE] Assinar PDFs desta pasta com Token A3":
+                    pdf_names = [p.name for p in pdfs]
+                    selected_to_sign = questionary.checkbox(
+                        "Selecione os PDFs para assinar (use Espaço):",
+                        choices=pdf_names
+                    ).ask()
+                    
+                    if selected_to_sign:
+                        pin = questionary.password("Digite o PIN (senha) do seu Token A3:").ask()
+                        if pin:
+                            for p in selected_to_sign:
+                                in_path = target_dir / p
+                                out_path = ops_dir / f"{in_path.stem}_assinado.pdf"
+                                try:
+                                    sign_with_a3(in_path, out_path, pin)
+                                except Exception as e:
+                                    console.print(f"[bold red]Erro ao assinar '{p}':[/bold red] {e}")
+                            console.print("[bold green]\nAssinatura em lote finalizada![/bold green]")
                     continue
                 
             # Se chegou aqui, é um PDF individual

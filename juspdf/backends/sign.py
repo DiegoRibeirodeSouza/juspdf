@@ -98,15 +98,10 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                     chosen_cert_id = cert_options[0]['id']
                     chosen_label = cert_options[0]['label']
                 
-            signer_kwargs = {'pkcs11_session': session, 'use_raw_mechanism': True}
-            if chosen_cert_id:
-                signer_kwargs['cert_id'] = chosen_cert_id
-                
-            signer = PKCS11Signer(**signer_kwargs)
-            
             from pyhanko.sign.signers.pdf_signer import PdfSigner
             from pyhanko.sign.fields import SigFieldSpec
             from pyhanko.stamp import TextStampStyle
+            import io
             
             cert_name = "Certificado ICP-Brasil"
             if chosen_cert_id:
@@ -118,14 +113,20 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
             stamp_style = TextStampStyle(
                 stamp_text=f"Assinado digitalmente por {cert_name}\nData: %(ts)s\nTecnologia: pyHanko"
             )
-            
-            meta = signers.PdfSignatureMetadata(
-                field_name='Signature1',
-                reason='Assinado digitalmente via JusPDF',
-            )
 
             for input_pdf, output_pdf in tasks:
                 try:
+                    # Instanciar o signer e meta a cada arquivo para evitar 'stale state' no driver PKCS11
+                    signer_kwargs = {'pkcs11_session': session, 'use_raw_mechanism': True}
+                    if chosen_cert_id:
+                        signer_kwargs['cert_id'] = chosen_cert_id
+                    signer = PKCS11Signer(**signer_kwargs)
+
+                    meta = signers.PdfSignatureMetadata(
+                        field_name='Signature1',
+                        reason='Assinado digitalmente via JusPDF',
+                    )
+
                     with open(input_pdf, 'rb') as doc_in:
                         w = IncrementalPdfFileWriter(doc_in)
                         
@@ -142,10 +143,15 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                             new_field_spec=new_field_spec
                         )
                         
+                        # Usar um buffer em memória para prevenir corrompimento caso o token falhe no meio da operação
+                        out_buffer = io.BytesIO()
+                        pdf_signer.sign_pdf(
+                            w, existing_fields_only=False, output=out_buffer
+                        )
+                        
+                        # Se não houve erro, salvar no arquivo final
                         with open(output_pdf, 'wb') as doc_out:
-                            pdf_signer.sign_pdf(
-                                w, existing_fields_only=False, output=doc_out
-                            )
+                            doc_out.write(out_buffer.getvalue())
                             
                     console.print(f"[bold green]Sucesso:[/bold green] Arquivo assinado e salvo em {output_pdf.name}")
                 except Exception as ex:

@@ -110,8 +110,15 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                         cert_name = c['label'].split(' emitido ')[0].split(' (')[0].split(' 20')[0].strip()
                         break
                         
+            if "DIEGO RIBEIRO DE SOUZA" in cert_name.upper():
+                stamp_text = "[ ICP-Brasil ] Documento assinado eletronicamente por Diego Ribeiro de Souza (OAB/MG 211.002) em %(ts)s."
+            else:
+                stamp_text = f"[ ICP-Brasil ] Documento assinado eletronicamente por {cert_name} em %(ts)s."
+
             stamp_style = TextStampStyle(
-                stamp_text=f"Assinado digitalmente por {cert_name}\nData: %(ts)s\nTecnologia: pyHanko"
+                stamp_text=stamp_text,
+                border_width=0,
+                background_opacity=0,
             )
 
             for input_pdf, output_pdf in tasks:
@@ -133,7 +140,7 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                         new_field_spec = SigFieldSpec(
                             sig_field_name='Signature1',
                             on_page=-1, # última página
-                            box=(150, 20, 450, 100) # x1, y1, x2, y2 (centralizado no rodapé)
+                            box=(10, 75, 585, 95) # Linha horizontal a ~3cm do rodapé
                         )
                         
                         pdf_signer = PdfSigner(

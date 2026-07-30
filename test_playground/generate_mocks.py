@@ -11,7 +11,7 @@ qr.make(fit=True)
 img = qr.make_image(fill_color="black", back_color="white")
 img.save('qr_mock.png')
 
-c = canvas.Canvas("stamp_samples/Mocks_Carimbos_JusPDF.pdf", pagesize=A4)
+c = canvas.Canvas("stamp_samples/Mocks_Carimbos_LitisDoc.pdf", pagesize=A4)
 
 def draw_header(title):
     c.setFont("Helvetica-Bold", 16)
@@ -32,7 +32,7 @@ c.setFont("Helvetica", 11)
 c.drawString(60, 695, "DIEGO RIBEIRO DE SOUZA - OAB/MG 211.002")
 c.setFont("Helvetica", 9)
 c.drawString(60, 675, "Data: 2026-07-29 22:50:00 -03:00")
-c.drawString(60, 660, "Tecnologia: JusPDF (ICP-Brasil)")
+c.drawString(60, 660, "Tecnologia: LitisDoc (ICP-Brasil)")
 c.showPage()
 
 # --- Estilo 2: Institucional ---
@@ -48,7 +48,7 @@ c.setFont("Helvetica", 11)
 c.drawString(60, 695, "DIEGO RIBEIRO DE SOUZA - OAB/MG 211.002")
 c.setFont("Helvetica", 9)
 c.drawString(60, 675, "Data: 2026-07-29 22:50:00 -03:00")
-c.drawString(60, 660, "Tecnologia: JusPDF (ICP-Brasil)")
+c.drawString(60, 660, "Tecnologia: LitisDoc (ICP-Brasil)")
 c.showPage()
 
 # --- Estilo 3: QR Code ---

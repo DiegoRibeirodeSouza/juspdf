@@ -1,12 +1,12 @@
-# 🥷 JusPDF
+# 🥷 LitisDoc
 
-**JusPDF** é o canivete suíço definitivo para manipulação avançada de arquivos PDF no Linux. Desenvolvido com foco em produtividade para advogados, auditores e profissionais que lidam com grandes volumes de documentos, o JusPDF permite realizar operações complexas em arquivos (como conversões judiciais, assinaturas, quebra de senhas, e OCR) através de uma interface interativa no terminal extremamente fácil de usar.
+**LitisDoc** é o canivete suíço definitivo para manipulação avançada de arquivos PDF no Linux. Desenvolvido com foco em produtividade para advogados, auditores e profissionais que lidam com grandes volumes de documentos, o LitisDoc permite realizar operações complexas em arquivos (como conversões judiciais, assinaturas, quebra de senhas, e OCR) através de uma interface interativa no terminal extremamente fácil de usar.
 
 ---
 
 ## ✨ Funcionalidades
 
-O JusPDF consolida ferramentas poderosas (QPDF, Ghostscript, Poppler, OCRmyPDF, ReportLab) em uma interface central unificada.
+O LitisDoc consolida ferramentas poderosas (QPDF, Ghostscript, Poppler, OCRmyPDF, ReportLab) em uma interface central unificada.
 
 ### 🔄 Operações em Lote
 *   **Gerador de Dossiês (Com Pré-Referenciação Hash):** Junte múltiplos PDFs e Imagens bagunçados em um Dossiê impecável. O sistema cria uma capa elegante, centraliza qualquer anexo em folhas A4 padronizadas, e injeta uma **Hash Criptográfica Curta** (ex: `A7F92B...`) em todas as páginas, permitindo que você cite os anexos na sua petição com precisão cirúrgica antes mesmo do protocolo no PJe.
@@ -43,7 +43,7 @@ O JusPDF consolida ferramentas poderosas (QPDF, Ghostscript, Poppler, OCRmyPDF, 
 
 ## ⚙️ Pré-requisitos (Debian / Ubuntu)
 
-O **JusPDF** faz o trabalho pesado orquestrando as melhores ferramentas de sistema do Linux. Antes de rodá-lo, você precisará ter essas dependências instaladas no seu sistema:
+O **LitisDoc** faz o trabalho pesado orquestrando as melhores ferramentas de sistema do Linux. Antes de rodá-lo, você precisará ter essas dependências instaladas no seu sistema:
 
 Abra seu terminal e rode o seguinte comando:
 ```bash
@@ -63,7 +63,7 @@ A aplicação é modular e gerida pelo Python via `pip`. Recomenda-se criar um a
    python3 -m venv venv
    source venv/bin/activate
    ```
-3. Instale o JusPDF em modo editável com as dependências do `pyproject.toml`:
+3. Instale o LitisDoc em modo editável com as dependências do `pyproject.toml`:
    ```bash
    pip install -e .
    ```
@@ -74,12 +74,12 @@ A aplicação é modular e gerida pelo Python via `pip`. Recomenda-se criar um a
 
 ## 💻 Como Usar
 
-O JusPDF opera em **Modo Interativo (TUI)** de forma padrão. Basta iniciar o aplicativo e usar as setas do teclado para navegar.
+O LitisDoc opera em **Modo Interativo (TUI)** de forma padrão. Basta iniciar o aplicativo e usar as setas do teclado para navegar.
 
 ### Rodando o App
 Dentro da pasta do projeto com o `venv` ativado, basta digitar:
 ```bash
-juspdf
+litisdoc
 ```
 
 **Passo a passo no app:**
@@ -94,10 +94,10 @@ Para facilitar ainda mais, você pode criar um atalho `.desktop` para rodá-lo c
 ```ini
 [Desktop Entry]
 Version=1.0
-Name=JusPDF
+Name=LitisDoc
 Comment=O Canivete Suíço de PDFs
-Exec=gnome-terminal -- bash -c "cd '/caminho/do/juspdf' && source venv/bin/activate && juspdf; exec bash"
-Icon=/caminho/do/juspdf/juspdf_icon.png
+Exec=gnome-terminal -- bash -c "cd '/caminho/do/litisdoc' && source venv/bin/activate && litisdoc; exec bash"
+Icon=/caminho/do/litisdoc/litisdoc_icon.png
 Terminal=false
 Type=Application
 Categories=Office;Utility;
@@ -107,7 +107,7 @@ Categories=Office;Utility;
 
 ## 📚 Tecnologias e Bibliotecas Utilizadas
 
-O JusPDF não reinventa a roda, mas sim atua como um maestro, orquestrando e unificando as melhores ferramentas de código-aberto disponíveis para PDF em uma única interface inteligente. Os créditos das operações vão para os seguintes projetos incríveis:
+O LitisDoc não reinventa a roda, mas sim atua como um maestro, orquestrando e unificando as melhores ferramentas de código-aberto disponíveis para PDF em uma única interface inteligente. Os créditos das operações vão para os seguintes projetos incríveis:
 
 **Ferramentas de Sistema (Linux):**
 *   **QPDF:** Motor veloz e estrutural para reordenação, separação, junção, encriptação e linearização.
@@ -130,9 +130,9 @@ O JusPDF não reinventa a roda, mas sim atua como um maestro, orquestrando e uni
 A arquitetura do projeto foi desenhada para manter os "motores" (backends) completamente isolados da interface com o usuário, facilitando manutenções futuras.
 
 ```text
-juspdf/
+litisdoc/
 ├── pyproject.toml              # Arquivo de configuração de dependências
-├── juspdf/
+├── litisdoc/
 │   ├── __init__.py
 │   ├── cli.py                  # Entrypoint de comando
 │   ├── tui.py                  # Lógica de Interface Textual Interativa (Questionary)

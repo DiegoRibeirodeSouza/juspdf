@@ -1,5 +1,5 @@
 [project]
-name = "juspdf"
+name = "litisdoc"
 version = "0.1.0"
 description = "Canivete suíço para manipulação de PDFs no Linux"
 authors = [{name = "Antigravity", email = "antigravity@google.com"}]
@@ -15,11 +15,11 @@ readme = "README.md"
 requires-python = ">= 3.9"
 
 [project.scripts]
-juspdf = "juspdf.cli:app"
+litisdoc = "litisdoc.cli:app"
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["juspdf*"]
+include = ["litisdoc*"]

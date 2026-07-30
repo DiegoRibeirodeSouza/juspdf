@@ -15,7 +15,7 @@ signer = signers.SimpleSigner.load(
 meta = signers.PdfSignatureMetadata(field_name='Signature1', url="https://validar.iti.gov.br")
 
 style1 = TextStampStyle(
-    stamp_text="Assinado digitalmente por\nDiego Ribeiro de Souza OAB/MG 211.002\nData: %(ts)s\nTecnologia: JusPDF",
+    stamp_text="Assinado digitalmente por\nDiego Ribeiro de Souza OAB/MG 211.002\nData: %(ts)s\nTecnologia: LitisDoc",
     border_width=2,
 )
 

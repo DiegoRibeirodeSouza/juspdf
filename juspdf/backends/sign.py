@@ -1,8 +1,74 @@
 import os
 from pathlib import Path
 from rich.console import Console
+import tempfile
+import datetime
+import os
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from PIL import Image
 
 console = Console()
+
+def _create_dynamic_stamp(signer_name: str) -> str:
+    """Gera um PDF temporário contendo o carimbo visual (Estilo A) e retorna o caminho do arquivo."""
+    tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    
+    # Tamanho mais compacto para caber em PDFs com margens curtas (ex: páginas de 453pt)
+    box_width = 400
+    box_height = 100
+    c = canvas.Canvas(tmp_file.name, pagesize=(box_width, box_height))
+    
+    # Centralizado na nova caixa
+    x_center = box_width / 2
+    
+    # Resolver caminhos absolutos dos assets
+    assets_dir = os.path.expanduser("~/.config/juspdf/assets")
+    font_reg = os.path.join(assets_dir, "cmunrm.ttf")
+    font_bold = os.path.join(assets_dir, "cmunbx.ttf")
+    img_path = os.path.join(assets_dir, "assinatura_limpa.png")
+    
+    # Registrar fontes, falhando silenciosamente se não existirem (fallback interno do ReportLab ocorrerá ou erro)
+    if os.path.exists(font_reg) and os.path.exists(font_bold):
+        pdfmetrics.registerFont(TTFont('CMU-Reg', font_reg))
+        pdfmetrics.registerFont(TTFont('CMU-Bold', font_bold))
+        f_reg, f_bold = "CMU-Reg", "CMU-Bold"
+    else:
+        f_reg, f_bold = "Helvetica", "Helvetica-Bold"
+
+    base_y = 30 # Y relativo ao crop box que definiremos
+    
+    # 1. Rubrica
+    if os.path.exists(img_path):
+        img = Image.open(img_path)
+        img_w, img_h = img.size
+        aspect = img_h / float(img_w)
+        target_w = 90
+        target_h = target_w * aspect
+        c.drawImage(img_path, x_center - target_w/2, base_y + 10, width=target_w, height=target_h, mask='auto')
+    
+    # 2. Linha mais compacta
+    c.setLineWidth(0.5)
+    c.line(x_center - 130, base_y + 10, x_center + 130, base_y + 10)
+    
+    # 3. Textos
+    data_str = f"Assinado eletronicamente em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+    # Formatação do nome extraindo OAB se possível
+    nome_str = signer_name.upper()
+    if "DIEGO RIBEIRO DE SOUZA" in nome_str:
+        nome_str = "Diego Ribeiro de Souza - OAB/MG 211.002"
+        
+    c.setFont(f_bold, 11)
+    c.drawCentredString(x_center, base_y - 3, nome_str)
+    c.setFont(f_reg, 10)
+    c.drawCentredString(x_center, base_y - 15, data_str)
+    
+    c.showPage()
+    c.save()
+    return tmp_file.name
+
 
 def sign_batch_with_a3(tasks: list, pin: str) -> None:
     """Assina um ou múltiplos PDFs em lote usando Token A3 (PKCS#11) via pyHanko, reutilizando a sessão."""
@@ -100,7 +166,7 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                 
             from pyhanko.sign.signers.pdf_signer import PdfSigner
             from pyhanko.sign.fields import SigFieldSpec
-            from pyhanko.stamp import TextStampStyle
+            from pyhanko.stamp import StaticStampStyle, TextStampStyle
             import io
             
             cert_name = "Certificado ICP-Brasil"
@@ -110,16 +176,21 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                         cert_name = c['label'].split(' emitido ')[0].split(' (')[0].split(' 20')[0].strip()
                         break
                         
-            if "DIEGO RIBEIRO DE SOUZA" in cert_name.upper():
-                stamp_text = "[ ICP-Brasil ] Documento assinado eletronicamente por Diego Ribeiro de Souza (OAB/MG 211.002) em %(ts)s."
+            is_diego = "DIEGO RIBEIRO DE SOUZA" in cert_name.upper()
+            stamp_pdf_path = None
+            
+            if is_diego:
+                # Gerar o carimbo dinâmico gráfico apenas para o autor do app
+                stamp_pdf_path = _create_dynamic_stamp(cert_name)
+                stamp_style = StaticStampStyle.from_pdf_file(stamp_pdf_path, border_width=0)
             else:
+                # Carimbo genérico textual em fallback para o público geral
                 stamp_text = f"[ ICP-Brasil ] Documento assinado eletronicamente por {cert_name} em %(ts)s."
-
-            stamp_style = TextStampStyle(
-                stamp_text=stamp_text,
-                border_width=0,
-                background_opacity=0,
-            )
+                stamp_style = TextStampStyle(
+                    stamp_text=stamp_text,
+                    border_width=0,
+                    background_opacity=0,
+                )
 
             for input_pdf, output_pdf in tasks:
                 try:
@@ -137,10 +208,15 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                     with open(input_pdf, 'rb') as doc_in:
                         w = IncrementalPdfFileWriter(doc_in)
                         
+                        if is_diego:
+                            sig_box = (30, 20, 430, 120)
+                        else:
+                            sig_box = (10, 75, 585, 95)
+                            
                         new_field_spec = SigFieldSpec(
                             sig_field_name='Signature1',
                             on_page=-1, # última página
-                            box=(10, 75, 585, 95) # Linha horizontal a ~3cm do rodapé
+                            box=sig_box
                         )
                         
                         pdf_signer = PdfSigner(
@@ -163,6 +239,14 @@ def sign_batch_with_a3(tasks: list, pin: str) -> None:
                     console.print(f"[bold green]Sucesso:[/bold green] Arquivo assinado e salvo em {output_pdf.name}")
                 except Exception as ex:
                     console.print(f"[bold red]Falha ao assinar '{input_pdf.name}':[/bold red] {ex}")
+            
+            # Limpar PDF temporário se gerado
+            try:
+                if stamp_pdf_path and os.path.exists(stamp_pdf_path):
+                    os.remove(stamp_pdf_path)
+            except Exception:
+                pass
+
                     
     except Exception as e:
         console.print(f"[bold red]Falha na comunicação com o Token:[/bold red] {e}")

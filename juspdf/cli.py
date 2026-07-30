@@ -2,7 +2,7 @@ import typer
 from rich.console import Console
 from juspdf.tui import run_tui
 
-from juspdf.commands import compress, split_merge, rotate, extract, ocr, convert, search, resurrect, impose, sign, verify
+from juspdf.commands import compress, split_merge, rotate, extract, ocr, convert, search, resurrect, impose, sign, verify, dossier
 
 app = typer.Typer(
     help="juspdf - Canivete suíço para manipulação de PDFs no Linux.",
@@ -23,6 +23,7 @@ app.registered_commands += resurrect.app.registered_commands
 app.registered_commands += impose.app.registered_commands
 app.registered_commands += sign.app.registered_commands
 app.registered_commands += verify.app.registered_commands
+app.registered_commands += dossier.app.registered_commands
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):

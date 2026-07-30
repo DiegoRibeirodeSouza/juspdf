@@ -79,9 +79,12 @@ def run_tui():
                     pdf_choices.append("🔍  [LOTE] Buscar texto em PDFs desta pasta")
                     pdf_choices.append("🖋️  [LOTE] Assinar PDFs desta pasta com Token A3")
                     
-                imgs = list(target_dir.glob("*.jpg")) + list(target_dir.glob("*.png"))
+                imgs = list(target_dir.glob("*.jpg")) + list(target_dir.glob("*.png")) + list(target_dir.glob("*.jpeg"))
                 if imgs:
                     pdf_choices.append("🖼️  [LOTE] Converter Imagens desta pasta para PDF")
+                    
+                if pdfs or imgs:
+                    pdf_choices.append("📑  [LOTE] Gerar Dossiê A4 (Padronizado c/ Capa)")
                     
                 pdf_choices.append("--- Escolha um PDF abaixo para manipular ---")
                 for p in pdfs:
@@ -140,6 +143,23 @@ def run_tui():
                             out_path = ops_dir / out_name
                             input_paths = [target_dir / p for p in selected_imgs]
                             convert_images_to_pdf(out_path, input_paths)
+                    continue
+
+                if selected_item == "📑  [LOTE] Gerar Dossiê A4 (Padronizado c/ Capa)":
+                    all_files = [p.name for p in pdfs] + [p.name for p in imgs]
+                    selected_for_dossier = questionary.checkbox(
+                        "Selecione os arquivos para o Dossiê (use Espaço para marcar):",
+                        choices=all_files
+                    ).ask()
+                    
+                    if selected_for_dossier:
+                        title = questionary.text("Título da Capa do Dossiê:", default="DOCUMENTOS").ask()
+                        out_name = questionary.text("Nome do arquivo final:", default="dossie.pdf").ask()
+                        if title and out_name:
+                            out_path = ops_dir / out_name
+                            input_paths = [target_dir / p for p in selected_for_dossier]
+                            from juspdf.backends.dossier import create_dossier
+                            create_dossier(title, input_paths, out_path)
                     continue
 
                 if selected_item == "🔍  [LOTE] Buscar texto em PDFs desta pasta":

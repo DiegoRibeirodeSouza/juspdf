@@ -1,6 +1,7 @@
 import os
 import tempfile
 import datetime
+import uuid
 from pathlib import Path
 from typing import List
 from rich.console import Console
@@ -15,8 +16,8 @@ console = Console()
 A4_WIDTH, A4_HEIGHT = A4
 MARGIN = 50
 
-def _create_cover_page(title: str) -> str:
-    """Gera uma página de rosto em PDF e retorna o caminho temporário."""
+def _create_cover_page(title: str, ref_hash: str) -> str:
+    """Gera uma página de rosto em PDF com título e Hash de referência."""
     tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     c = canvas.Canvas(tmp_file.name, pagesize=A4)
     
@@ -46,10 +47,13 @@ def _create_cover_page(title: str) -> str:
     c.setLineWidth(1)
     c.line(A4_WIDTH / 2 - 200, y_center + 15, A4_WIDTH / 2 + 200, y_center + 15)
     
-    # Data de geração
+    # Data de geração e Hash de Referência
     c.setFont(f_sub, 12)
     data_str = f"Gerado em {datetime.datetime.now().strftime('%d/%m/%Y às %H:%M')}"
     c.drawCentredString(A4_WIDTH / 2, y_center - 20, data_str)
+    
+    c.setFont(f_title, 14)
+    c.drawCentredString(A4_WIDTH / 2, y_center - 50, f"Ref: {ref_hash}")
     
     c.showPage()
     c.save()
@@ -79,10 +83,16 @@ def _fit_rect(src_w: float, src_h: float, max_w: float, max_h: float) -> fitz.Re
 def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> None:
     """Processa todos os inputs, padroniza em A4 e gera o dossiê final."""
     try:
+        # Gera o Hash de 15 caracteres (ex: 8F2A3B9C4E1D7X0)
+        ref_hash = uuid.uuid4().hex[:15].upper()
+        
+        # Anexa o hash ao nome do arquivo final (antes da extensão)
+        final_output = output_pdf.parent / f"{output_pdf.stem}_{ref_hash}{output_pdf.suffix}"
+        
         final_doc = fitz.open()
         
         # 1. Inserir a Capa
-        cover_path = _create_cover_page(title)
+        cover_path = _create_cover_page(title, ref_hash)
         cover_doc = fitz.open(cover_path)
         final_doc.insert_pdf(cover_doc)
         cover_doc.close()
@@ -114,8 +124,13 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                     # Desenha a página do PDF original na nossa folha A4 limpa
                     new_page.show_pdf_page(target_rect, src_doc, page_num)
                     
-                    # Título no cabeçalho
+                    # Título no cabeçalho (Esquerda) e Hash (Direita)
                     new_page.insert_text(fitz.Point(MARGIN, 30), title.upper(), fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
+                    
+                    # Calcula o alinhamento da hash na direita
+                    hash_text = f"Ref: {ref_hash}"
+                    text_length = 95  # Estimativa segura para 15 caracteres size 10
+                    new_page.insert_text(fitz.Point(A4_WIDTH - MARGIN - text_length, 30), hash_text, fontname="helv", fontsize=10, color=(0.6, 0.6, 0.6))
                 src_doc.close()
                 
             elif ext in ['.png', '.jpg', '.jpeg']:
@@ -129,19 +144,22 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                 # Inserimos os bytes da imagem
                 new_page.insert_image(target_rect, filename=str(file_path))
                 
-                # Título no cabeçalho
+                # Título no cabeçalho e Hash na Direita
                 new_page.insert_text(fitz.Point(MARGIN, 30), title.upper(), fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
+                hash_text = f"Ref: {ref_hash}"
+                text_length = 95  # Estimativa segura
+                new_page.insert_text(fitz.Point(A4_WIDTH - MARGIN - text_length, 30), hash_text, fontname="helv", fontsize=10, color=(0.6, 0.6, 0.6))
                 img_doc.close()
                 
             else:
                 console.print(f"[bold yellow]Formato ignorado:[/bold yellow] {file_path}")
                 
         # 3. Salvar o documento final
-        final_doc.save(output_pdf)
+        final_doc.save(final_output)
         final_doc.close()
         
-        console.print(f"\n[bold green]✓ Dossiê '{title}' gerado com sucesso![/bold green]")
-        console.print(f"Salvo em: {output_pdf.absolute()}\n")
+        console.print(f"\n[bold green]✓ Dossiê '{title}' gerado com sucesso! (Ref: {ref_hash})[/bold green]")
+        console.print(f"Salvo em: {final_output.absolute()}\n")
         
     except Exception as e:
         console.print(f"[bold red]Erro crítico ao gerar dossiê:[/bold red] {e}")

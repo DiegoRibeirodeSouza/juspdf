@@ -53,7 +53,7 @@ def _create_cover_page(title: str, ref_hash: str) -> str:
     c.drawCentredString(A4_WIDTH / 2, y_center - 20, data_str)
     
     c.setFont(f_title, 14)
-    c.drawCentredString(A4_WIDTH / 2, y_center - 50, f"Ref: {ref_hash}")
+    c.drawCentredString(A4_WIDTH / 2, y_center - 50, f"Ref*: {ref_hash}")
     
     # Aviso para o Tribunal
     c.setFont(f_sub, 9)
@@ -133,7 +133,7 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                     new_page.insert_text(fitz.Point(MARGIN, 30), title.upper(), fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
                     
                     # Calcula o alinhamento da hash na direita
-                    hash_text = f"Ref: {ref_hash}"
+                    hash_text = f"Ref*: {ref_hash}"
                     text_length = 95  # Estimativa segura para 15 caracteres size 10
                     new_page.insert_text(fitz.Point(A4_WIDTH - MARGIN - text_length, 30), hash_text, fontname="helv", fontsize=10, color=(0.6, 0.6, 0.6))
                 src_doc.close()
@@ -151,7 +151,7 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
                 
                 # Título no cabeçalho e Hash na Direita
                 new_page.insert_text(fitz.Point(MARGIN, 30), title.upper(), fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
-                hash_text = f"Ref: {ref_hash}"
+                hash_text = f"Ref*: {ref_hash}"
                 text_length = 95  # Estimativa segura
                 new_page.insert_text(fitz.Point(A4_WIDTH - MARGIN - text_length, 30), hash_text, fontname="helv", fontsize=10, color=(0.6, 0.6, 0.6))
                 img_doc.close()
@@ -175,7 +175,7 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
         final_doc.save(final_output)
         final_doc.close()
         
-        console.print(f"\n[bold green]✓ Dossiê '{title}' gerado com sucesso! (Ref: {ref_hash})[/bold green]")
+        console.print(f"\n[bold green]✓ Dossiê '{title}' gerado com sucesso! (Ref*: {ref_hash})[/bold green]")
         console.print(f"Salvo em: {final_output.absolute()}\n")
         
     except Exception as e:

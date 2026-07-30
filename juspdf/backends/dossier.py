@@ -55,6 +55,11 @@ def _create_cover_page(title: str, ref_hash: str) -> str:
     c.setFont(f_title, 14)
     c.drawCentredString(A4_WIDTH / 2, y_center - 50, f"Ref: {ref_hash}")
     
+    # Aviso para o Tribunal
+    c.setFont(f_sub, 9)
+    notice = "* Código Hash de controle privativo gerado pelo software JusPDF. Não se confunde com o ID de protocolo do Tribunal."
+    c.drawCentredString(A4_WIDTH / 2, y_center - 80, notice)
+    
     c.showPage()
     c.save()
     return tmp_file.name
@@ -154,7 +159,19 @@ def create_dossier(title: str, input_paths: List[Path], output_pdf: Path) -> Non
             else:
                 console.print(f"[bold yellow]Formato ignorado:[/bold yellow] {file_path}")
                 
-        # 3. Salvar o documento final
+        # 3. Paginação (Ignorando a capa)
+        total_pages = len(final_doc)
+        total_content_pages = total_pages - 1
+        for i in range(1, total_pages):
+            page = final_doc[i]
+            page_text = f"Página {i} de {total_content_pages}"
+            
+            # Centralizado no rodapé
+            text_len = 70 # Estimativa de largura para centralizar
+            page.insert_text(fitz.Point((A4_WIDTH / 2) - (text_len / 2), A4_HEIGHT - 30), 
+                             page_text, fontname="helv", fontsize=10, color=(0.4, 0.4, 0.4))
+                
+        # 4. Salvar o documento final
         final_doc.save(final_output)
         final_doc.close()
         

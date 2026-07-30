@@ -1,0 +1,25 @@
+[project]
+name = "juspdf"
+version = "0.1.0"
+description = "Canivete suíço para manipulação de PDFs no Linux"
+authors = [{name = "Antigravity", email = "antigravity@google.com"}]
+dependencies = [
+    "typer>=0.12.0",
+    "rich>=13.0.0",
+    "questionary>=2.0.0",
+    "pypdf>=4.0.0",
+    "reportlab>=4.0.0",
+    "pyhanko[pkcs11]>=0.21.0",
+]
+readme = "README.md"
+requires-python = ">= 3.9"
+
+[project.scripts]
+juspdf = "juspdf.cli:app"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["juspdf*"]

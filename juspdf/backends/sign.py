@@ -4,8 +4,8 @@ from rich.console import Console
 
 console = Console()
 
-def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
-    """Assina um PDF usando Token A3 (PKCS#11) via pyHanko."""
+def sign_batch_with_a3(tasks: list, pin: str) -> None:
+    """Assina um ou múltiplos PDFs em lote usando Token A3 (PKCS#11) via pyHanko, reutilizando a sessão."""
     try:
         from pyhanko.sign import signers
         from pyhanko.sign.pkcs11 import PKCS11Signer
@@ -15,9 +15,6 @@ def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
         return
 
     # Buscar biblioteca PKCS#11 do sistema (OpenSC é o mais comum no Linux)
-    # Alguns outros caminhos comuns:
-    # Safenet: /usr/lib/libeToken.so
-    # SafeSign: /usr/lib/libaetpkss.so
     pkcs11_paths = [
         "/usr/lib/safesign-private/libaetpkss.so.3",
         "/usr/lib/safesign-private/libaetpkss.so",
@@ -37,7 +34,6 @@ def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
         module_path = None
         token = None
         
-        # Procura por um módulo que contenha um token ativo
         for p in pkcs11_paths:
             if os.path.exists(p):
                 try:
@@ -56,7 +52,7 @@ def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
             
         console.print(f"[bold green]Módulo PKCS#11 detectado:[/bold green] {module_path}")
         console.print(f"[bold green]Token encontrado:[/bold green] {token.label}")
-        console.print("[yellow]Comunicando com o Token A3 (isso pode levar alguns segundos)...[/yellow]")
+        console.print("[yellow]Comunicando com o Token A3 (abrindo sessão criptográfica única)...[/yellow]")
         
         with token.open(user_pin=pin) as session:
             # Lista certificados disponíveis no token
@@ -67,9 +63,7 @@ def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
                     label = c[pkcs11.Attribute.LABEL]
                     if isinstance(label, bytes):
                         label = label.decode('utf-8', errors='ignore')
-                        
                     cid = c[pkcs11.Attribute.ID]
-                    
                     if label and cid:
                         cert_options.append({'label': label, 'id': cid})
                 except Exception:
@@ -77,7 +71,6 @@ def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
             
             chosen_cert_id = None
             
-            # Auto-selecionar o certificado desejado se estiver presente
             for c in cert_options:
                 if c['label'] == "DIEGO RIBEIRO DE SOUZA 2024-10-09 20:22:25":
                     chosen_cert_id = c['id']
@@ -114,48 +107,53 @@ def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
             from pyhanko.sign.signers.pdf_signer import PdfSigner
             from pyhanko.sign.fields import SigFieldSpec
             from pyhanko.stamp import TextStampStyle
+            
+            cert_name = "Certificado ICP-Brasil"
+            if chosen_cert_id:
+                for c in cert_options:
+                    if c['id'] == chosen_cert_id:
+                        cert_name = c['label'].split(' emitido ')[0].split(' (')[0].split(' 20')[0].strip()
+                        break
+                        
+            stamp_style = TextStampStyle(
+                stamp_text=f"Assinado digitalmente por {cert_name}\nData: %(ts)s\nTecnologia: pyHanko"
+            )
+            
+            meta = signers.PdfSignatureMetadata(
+                field_name='Signature1',
+                reason='Assinado digitalmente via JusPDF',
+            )
 
-            with open(input_pdf, 'rb') as doc_in:
-                w = IncrementalPdfFileWriter(doc_in)
-                
-                # Metadata da assinatura
-                meta = signers.PdfSignatureMetadata(
-                    field_name='Signature1',
-                    reason='Assinado digitalmente via JusPDF',
-                )
-                
-                cert_name = "Certificado ICP-Brasil"
-                if chosen_cert_id:
-                    for c in cert_options:
-                        if c['id'] == chosen_cert_id:
-                            # Limpar label (remover datas e trechos finais desnecessários)
-                            cert_name = c['label'].split(' emitido ')[0].split(' (')[0].split(' 20')[0].strip()
-                            break
+            for input_pdf, output_pdf in tasks:
+                try:
+                    with open(input_pdf, 'rb') as doc_in:
+                        w = IncrementalPdfFileWriter(doc_in)
+                        
+                        new_field_spec = SigFieldSpec(
+                            sig_field_name='Signature1',
+                            on_page=-1, # última página
+                            box=(150, 20, 450, 100) # x1, y1, x2, y2 (centralizado no rodapé)
+                        )
+                        
+                        pdf_signer = PdfSigner(
+                            signature_meta=meta,
+                            signer=signer,
+                            stamp_style=stamp_style,
+                            new_field_spec=new_field_spec
+                        )
+                        
+                        with open(output_pdf, 'wb') as doc_out:
+                            pdf_signer.sign_pdf(
+                                w, existing_fields_only=False, output=doc_out
+                            )
                             
-                stamp_style = TextStampStyle(
-                    stamp_text=f"Assinado digitalmente por {cert_name}\nData: %(ts)s\nTecnologia: pyHanko"
-                )
-                
-                new_field_spec = SigFieldSpec(
-                    sig_field_name='Signature1',
-                    on_page=-1, # última página
-                    box=(150, 20, 450, 100) # x1, y1, x2, y2 (centralizado no rodapé)
-                )
-                
-                pdf_signer = PdfSigner(
-                    signature_meta=meta,
-                    signer=signer,
-                    stamp_style=stamp_style,
-                    new_field_spec=new_field_spec
-                )
-                
-                with open(output_pdf, 'wb') as doc_out:
-                    pdf_signer.sign_pdf(
-                        w, existing_fields_only=False, output=doc_out
-                    )
+                    console.print(f"[bold green]Sucesso:[/bold green] Arquivo assinado e salvo em {output_pdf.name}")
+                except Exception as ex:
+                    console.print(f"[bold red]Falha ao assinar '{input_pdf.name}':[/bold red] {ex}")
                     
-        console.print(f"[bold green]Sucesso:[/bold green] Arquivo assinado e salvo em {output_pdf.name}")
-        
     except Exception as e:
-        console.print(f"[bold red]Falha na assinatura:[/bold red] {e}")
+        console.print(f"[bold red]Falha na comunicação com o Token:[/bold red] {e}")
         console.print("Verifique se o token A3 está bem conectado e se a senha está correta.")
+
+def sign_with_a3(input_pdf: Path, output_pdf: Path, pin: str) -> None:
+    sign_batch_with_a3([(input_pdf, output_pdf)], pin)

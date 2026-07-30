@@ -158,13 +158,14 @@ def run_tui():
                     if selected_to_sign:
                         pin = questionary.password("Digite o PIN (senha) do seu Token A3:").ask()
                         if pin:
+                            tasks = []
                             for p in selected_to_sign:
                                 in_path = target_dir / p
                                 out_path = ops_dir / f"{in_path.stem}_assinado.pdf"
-                                try:
-                                    sign_with_a3(in_path, out_path, pin)
-                                except Exception as e:
-                                    console.print(f"[bold red]Erro ao assinar '{p}':[/bold red] {e}")
+                                tasks.append((in_path, out_path))
+                                
+                            from juspdf.backends.sign import sign_batch_with_a3
+                            sign_batch_with_a3(tasks, pin)
                             console.print("[bold green]\nAssinatura em lote finalizada![/bold green]")
                     continue
                 
